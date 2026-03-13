@@ -1,21 +1,14 @@
 var express = require("express");
 var router = express.Router();
-
+let { checkLogin } = require('../utils/authHandler')
 let { userCreateValidator
     , userUpdateValidator
     , handleResultValidator } = require('../utils/validatorHandler')
-
-
-
 let userController = require("../controllers/users");
 
 
-router.get("/", async function (req, res, next) {
-    let users = await userModel
-        .find({ isDeleted: false }).populate({
-            path: 'role',
-            select: 'name'
-        })
+router.get("/", checkLogin, async function (req, res, next) {
+    let users = await userController.GetAllUser();
     res.send(users);
 });
 

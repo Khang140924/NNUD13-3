@@ -26,12 +26,31 @@ module.exports = {
         user.loginCount++;
         if (user.loginCount == 3) {
             user.loginCount = 0;
-            user.lockTime  = new Date(Date.now()+60*60*1000)
+            user.lockTime = new Date(Date.now() + 60 * 60 * 1000)
         }
         await user.save()
     },
     SuccessLogin: async function (user) {
         user.loginCount = 0;
         await user.save()
+    },
+    GetAllUser: async function () {
+        return await userModel
+            .find({ isDeleted: false }).populate({
+                path: 'role',
+                select: 'name'
+            })
+    },
+    FindById: async function (id) {
+        try {
+            let getUser = await userModel
+                .findOne({ isDeleted: false, _id: id }).populate({
+                    path: 'role',
+                    select: 'name'
+                })
+            return getUser;
+        } catch (error) {
+            return false
+        }
     }
 }
