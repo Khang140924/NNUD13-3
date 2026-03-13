@@ -4,7 +4,16 @@ let userController = require('../controllers/users')
 let { RegisterValidator, handleResultValidator } = require('../utils/validatorHandler')
 let bcrypt = require('bcrypt')
 let jwt = require('jsonwebtoken')
-let {checkLogin} = require('../utils/authHandler')
+let { checkLogin } = require('../utils/authHandler')
+
+// THÊM 2 THƯ VIỆN ĐỂ ĐỌC FILE
+const fs = require('fs');
+const path = require('path');
+
+// 1. ĐỌC FILE PRIVATE KEY TỪ THƯ MỤC GỐC ĐỂ KÝ TOKEN
+const privateKeyPath = path.join(__dirname, '../private.pem');
+const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+
 /* GET home page. */
 router.post('/register', RegisterValidator, handleResultValidator, async function (req, res, next) {
     let newUser = userController.CreateAnUser(
@@ -18,6 +27,7 @@ router.post('/register', RegisterValidator, handleResultValidator, async functio
         message: "dang ki thanh cong"
     })
 });
+
 router.post('/login', async function (req, res, next) {
     let { username, password } = req.body;
     let getUser = await userController.FindByUsername(username);
@@ -30,11 +40,15 @@ router.post('/login', async function (req, res, next) {
         }
         if (bcrypt.compareSync(password, getUser.password)) {
             await userController.SuccessLogin(getUser);
+            
+            // 2. CHUYỂN SANG DÙNG PRIVATE KEY VÀ THUẬT TOÁN RS256
             let token = jwt.sign({
                 id: getUser._id
-            },"secret",{
-                expiresIn:'30d'
+            }, privateKey, {
+                algorithm: 'RS256', // Khai báo rõ thuật toán mã hoá bất đối xứng
+                expiresIn: '30d'
             })
+            
             res.send(token)
         } else {
             await userController.FailLogin(getUser);
@@ -43,9 +57,10 @@ router.post('/login', async function (req, res, next) {
     }
 
 });
-router.get('/me',checkLogin,function(req,res,next){
+
+// (Phần API /me này của bạn viết rất gọn gàng và đúng chuẩn rồi!)
+router.get('/me', checkLogin, function(req, res, next){
     res.send(req.user)
 })
-
 
 module.exports = router;
